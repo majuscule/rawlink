@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+local url="$1";
+local protocol="${url%%:*}";
+if [ -n "$protocol" ]; then
+  local domain="$(awk -F/ '{print $3}' <<< "$url")";
+else
+  local domain="$(awk -F/ '{print $1}' <<< "$url")";
+fi;
+local paste="$(curl -sL "$url")";
+if ! grep --color=auto -qE '<html|<!DOCTYPE' <(echo -e "$paste"); then
+  echo "$paste";
+  return;
+fi;
+local rawlink="$(
+curl -sLN "$url" |
+  perl -ne '
+  m/raw|plain|show as text|download/i &&
+  ! m/.zip/ &&
+  m/href/i &&
+  s|.*?href\s*=\s*["'\'']([^"'\'']+).*|\1|i &&
+  print && exit'
+)";
+if [[ "${rawlink:0:4}" == 'http' ]]; then
+  url="$rawlink";
+else
+  if [[ "${rawlink:0:1}" == '/' ]]; then
+    url="$protocol://$domain$rawlink";
+  else
+    url="$protocol://$rawlink";
+  fi;
+fi;
+[ -n "$rawlink" ] && curl -sL "$url" || echo curl -L "$url" \?
