@@ -8,7 +8,7 @@ else
   domain="$(awk -F/ '{print $1}' <<< "$url")"
 fi
 paste="$(curl -sL "$url")"
-if ! grep --color=auto -qE '<html|<!DOCTYPE' <(echo -e "$paste"); then
+if ! grep --color=auto -qE '<html|<!DOCTYPE' <<< "$paste"; then
   echo "$paste"
   return
 fi
